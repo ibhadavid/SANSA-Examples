@@ -95,18 +95,29 @@ Function to convert SparQL where condition to SQL
 
 }
 
+
+/*
+  OR Where Condition Testing
+  AND Where Condition Testing
+  Select with Nested Filter
+  Query with Join
+  Query with Left Join
+  Query with Right Join
+  Query with Outer Join
+ */
 object TripleOpsQuery{
 
 
   def execute(spark:SparkSession,rdfTriple: RDD[org.apache.jena.graph.Triple] , query:String): Unit ={
 
     var queryops=new TripleOpsQuery()
-    println(queryops.getJoinQuery(query))
+
     var df=spark.sql(queryops.getJoinQuery(query))
     val count=rdfTriple.sparql(query).count()
-    println(s"SparQL Query: ${query}")
-    println("RDF Query Result: "+ count)
-    println(s"Count: ${df.count()}")
+    println(s"SparQL Query : ${query}")
+    println("Spark SQL: "+queryops.getJoinQuery(query))
+    println("SparQL Query Count: "+ count)
+    println(s"Spark SQL Count: ${df.count()}")
 
   }
 
@@ -120,9 +131,11 @@ object TripleOpsQuery{
      val hdtDF = TripleOps.getHDT(rdfTriple)
 
      //var query="SELECT ?S ?O ?P WHERE { ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual4> ?P .  }"
+     var query="SELECT ?S ?O ?P WHERE { ?S ?P ?O }"
+    execute(spark,rdfTriple,query)
 
-    var query="SELECT ?S ?O ?P WHERE { ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O .  }"
-   // execute(spark,rdfTriple,query)
+    query="SELECT ?S ?O ?P WHERE { ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O .  }"
+    execute(spark,rdfTriple,query)
 
 
     query="SELECT ?S ?O ?P WHERE { <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/Product92> ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
