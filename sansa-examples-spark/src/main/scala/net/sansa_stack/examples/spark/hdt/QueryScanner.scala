@@ -1,12 +1,12 @@
 package net.sansa_stack.examples.spark.hdt
 
-import org.apache.jena.graph.Triple
+import java.util
+
+import org.apache.jena.graph.{Node, Triple}
 import org.apache.jena.sparql.algebra.OpVisitor
 import org.apache.jena.sparql.algebra.op._
-import java.util
-import java.util.stream.Collectors
-
 import org.apache.jena.sparql.core.{Quad, Var}
+import org.apache.jena.sparql.expr.Expr
 
 
 /**
@@ -14,16 +14,42 @@ import org.apache.jena.sparql.core.{Quad, Var}
   */
 class QueryScanner extends OpVisitor {
 
-//  private val triples = new util.HashSet[_]
+  //  private val triples = new util.HashSet[_]
 
   //def getTriples: util.HashSet[_] = triples
 
-  val whereCondition = new util.HashSet[Triple]()
-  val triples = new util.HashSet[Quad]()
-  val varList = new util.HashSet[Var]()
+  val whereCondition = new util.ArrayList[Triple]()
+  val triples = new util.ArrayList[Quad]()
+  var subjects=new util.ArrayList[Node]()
+  var predicates=new util.ArrayList[Node]()
+  var objects=new util.ArrayList[Node]()
+  val varList = new util.ArrayList[Var]()
+  val filters = new util.ArrayList[org.apache.jena.sparql.expr.Expr]()
+  var isDistinctEnabled=false;
+
+  def reset: Unit ={
+    whereCondition.clear()
+    triples.clear()
+    subjects.clear()
+    predicates.clear()
+    objects.clear()
+    varList.clear()
+    filters.clear()
+    isDistinctEnabled=false
+  }
 
   override def visit(opBGP: OpBGP): Unit = {
     whereCondition.addAll(opBGP.getPattern.getList)
+    println(whereCondition)
+
+    for( i <- 0 to whereCondition.size()-1)
+    {
+      subjects.add(i,whereCondition.get(i).getSubject)
+      objects.add(i,whereCondition.get(i).getObject)
+      predicates.add(i,whereCondition.get(i).getPredicate)
+
+    }
+
   }
 
   override def visit(opQuadPattern: OpQuadPattern): Unit = {
@@ -56,6 +82,8 @@ class QueryScanner extends OpVisitor {
   }
 
   override def visit(opFilter: OpFilter): Unit = {
+    filters.addAll(opFilter.getExprs.getList)
+    println("Filter Condition: " + filters)
   }
 
   override def visit(opGraph: OpGraph): Unit = {
@@ -107,6 +135,7 @@ class QueryScanner extends OpVisitor {
   }
 
   override def visit(opOrder: OpOrder): Unit = {
+    println("Order By: "+opOrder.getConditions)
   }
 
   override def visit(opProject: OpProject): Unit = {
@@ -117,7 +146,10 @@ class QueryScanner extends OpVisitor {
   }
 
   override def visit(opDistinct: OpDistinct): Unit = {
-    println(opDistinct.getSubOp)
+    println("Distinct: "+ opDistinct.getName)
+    if(opDistinct.getName.equals("distinct")){
+      isDistinctEnabled=true
+    }
   }
 
   override def visit(opSlice: OpSlice): Unit = {
@@ -127,6 +159,6 @@ class QueryScanner extends OpVisitor {
   }
 
   override def visit(opTopN: OpTopN): Unit = {
-    println(opTopN.getName)
+    println("Top : "+opTopN.getName)
   }
 }
