@@ -203,8 +203,9 @@ object TripleOpsQuery{
     val spark = SparkSession.builder().appName("TripleOps").master("local[*]").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
 
+    val tripleFile="/home/david/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt"
      val lang = Lang.NTRIPLES
-     val rdfTriple = spark.rdf(lang)("/Users/jignesh/Desktop/Fiverr/David/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt");
+     val rdfTriple = spark.rdf(lang)(tripleFile);
      val hdtDF = TripleOps.getHDT(rdfTriple)
 
      //var query="SELECT ?S ?O ?P WHERE { ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual4> ?P .  }"
@@ -213,15 +214,15 @@ object TripleOpsQuery{
 
      query="SELECT ?S ?O ?P WHERE { ?S ?P ?O }"
      execute(spark,rdfTriple,query)
-//
+
       query="SELECT DISTINCT ?S ?O ?P WHERE { ?S ?P ?O }"
         execute(spark,rdfTriple,query)
 
         query="PREFIX foo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/> PREFIX hoo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/> SELECT ?S ?O ?P WHERE { foo:ProductType2 ?P ?O .  }"
         execute(spark,rdfTriple,query)
 
-    //query="prefix test: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/> SELECT ?S ?O ?P WHERE { test:Product92 ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
-    //execute(spark,rdfTriple,query)
+    query="prefix test: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/> SELECT ?S ?O ?P WHERE { test:Product92 ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
+    execute(spark,rdfTriple,query)
 
     query="SELECT ?S ?O ?P WHERE { <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/Product92> ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
      execute(spark,rdfTriple,query)

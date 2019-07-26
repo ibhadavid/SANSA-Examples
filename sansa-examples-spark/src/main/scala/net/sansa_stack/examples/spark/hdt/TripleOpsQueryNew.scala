@@ -122,9 +122,9 @@ object TripleOpsQueryNew {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("TripleOps").master("local[*]").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
-
+    val tripleFile="/home/david/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt"
     val lang = Lang.NTRIPLES
-    val rdfTriple = spark.rdf(lang)("D:/David/SANSA-Examples/sansa-examples-spark/src/main/resources/small/lubm/sample.nt");
+    val rdfTriple = spark.rdf(lang)(tripleFile);
     val hdtDF = TripleOps.getHDT(rdfTriple)
 
     var query="SELECT ?S ?O ?P WHERE { ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual4> ?P .  }"
