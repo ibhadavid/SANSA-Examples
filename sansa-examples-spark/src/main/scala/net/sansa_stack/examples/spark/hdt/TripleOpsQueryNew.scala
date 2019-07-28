@@ -14,22 +14,37 @@ class TripleOpsQueryNew() {
 
   val queryScanner = new QueryScanner()
 
+  def isCountEnabled(): Boolean = {
+    var status=false
+    for (i <- 0 to queryScanner.aggregatorList.size() - 1) {
+     if( queryScanner.aggregatorList.get(i).getAggregator.getName.equalsIgnoreCase("COUNT") ){
+       status=true;
+     }
+    }
+    status
+  }
+
   def getProjectionFields() = {
     var result = ""
 
-    for (i <- 0 to queryScanner.varList.size() - 1) {
-      val name=queryScanner.varList.get(i).getVarName
+    if(isCountEnabled){
+      result=" count(*) "
+    }else{
+      for (i <- 0 to queryScanner.varList.size() - 1) {
+        val name=queryScanner.varList.get(i).getVarName
 
-      if(name.equalsIgnoreCase("S")){
-        result+=s"${TripleOps.SUBJECT_TABLE}.name as subject, "
-      }
-      else  if(name.equalsIgnoreCase("O")){
-        result+=s"${TripleOps.OBJECT_TABLE}.name as object, "
-      }
-      else  if(name.equalsIgnoreCase("P")){
-        result+=s"${TripleOps.PREDICATE_TABLE}.name as predicate, "
+        if(name.equalsIgnoreCase("S")){
+          result+=s"${TripleOps.SUBJECT_TABLE}.name as subject, "
+        }
+        else  if(name.equalsIgnoreCase("O")){
+          result+=s"${TripleOps.OBJECT_TABLE}.name as object, "
+        }
+        else  if(name.equalsIgnoreCase("P")){
+          result+=s"${TripleOps.PREDICATE_TABLE}.name as predicate, "
+        }
       }
     }
+
     //remove extra comma at the end
     result.reverse.replaceFirst(",", "").reverse
   }
@@ -129,25 +144,31 @@ object TripleOpsQueryNew {
 
     var query="SELECT ?S ?O ?P WHERE { ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual4> ?P .  }"
 
-    query=
-     """
-       SELECT ?S ?O ?P WHERE { FILTER( STRSTARTS(?p, "http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/ProductType1" )) . }
-     """.stripMargin
-   execute(spark,rdfTriple,query)
-
-    query="SELECT DISTINCT ?S ?O ?P WHERE { ?S ?P ?O }"
+    query="SELECT ?S ?O ?P  WHERE { ?S ?P ?O }"
     execute(spark,rdfTriple,query)
 
-    query="PREFIX foo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/> PREFIX hoo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/> SELECT ?S ?O ?P WHERE { foo:ProductType2 ?P ?O .  } limit 10"
-    execute(spark,rdfTriple,query)
+     query="SELECT (COUNT(*) AS ?A)  WHERE { ?S ?P ?O }"
+      execute(spark,rdfTriple,query)
+
+/*   query="""
+     SELECT ?S ?O ?P WHERE { FILTER( STRSTARTS(?p, "http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/ProductType1" )) . }
+   """.stripMargin
+ execute(spark,rdfTriple,query)
+  */
+
+query="SELECT DISTINCT ?S ?O ?P WHERE { ?S ?P ?O }"
+execute(spark,rdfTriple,query)
+
+query="PREFIX foo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/> PREFIX hoo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/> SELECT ?S ?O ?P WHERE { foo:ProductType2 ?P ?O .  } limit 10"
+execute(spark,rdfTriple,query)
 
 
-   //query="prefix test: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/> SELECT ?S ?O ?P WHERE { test:Product92 ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
-   //execute(spark,rdfTriple,query)
+//query="prefix test: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/> SELECT ?S ?O ?P WHERE { test:Product92 ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
+//execute(spark,rdfTriple,query)
 
-    query="SELECT ?S ?O ?P WHERE { <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/Product92> ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
-    execute(spark,rdfTriple,query)
+query="SELECT ?S ?O ?P WHERE { <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/Product92> ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
+execute(spark,rdfTriple,query)
 
-  }
+}
 
 }

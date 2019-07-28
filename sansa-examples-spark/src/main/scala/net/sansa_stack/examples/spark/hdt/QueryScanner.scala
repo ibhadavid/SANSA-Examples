@@ -6,7 +6,7 @@ import org.apache.jena.graph.{Node, Triple}
 import org.apache.jena.sparql.algebra.OpVisitor
 import org.apache.jena.sparql.algebra.op._
 import org.apache.jena.sparql.core.{Quad, Var}
-import org.apache.jena.sparql.expr.Expr
+import org.apache.jena.sparql.expr.{Expr, ExprAggregator}
 
 
 /**
@@ -25,6 +25,7 @@ class QueryScanner extends OpVisitor {
   var objects=new util.ArrayList[Node]()
   val varList = new util.ArrayList[Var]()
   val filters = new util.ArrayList[org.apache.jena.sparql.expr.Expr]()
+  val aggregatorList = new util.ArrayList[ExprAggregator]()
   var isDistinctEnabled=false;
 
   def reset: Unit ={
@@ -155,7 +156,10 @@ class QueryScanner extends OpVisitor {
   override def visit(opSlice: OpSlice): Unit = {
   }
 
+
   override def visit(opGroup: OpGroup): Unit = {
+    println("Group: "+opGroup.getAggregators.get(0).getAggregator.getName)
+    aggregatorList.addAll(opGroup.getAggregators)
   }
 
   override def visit(opTopN: OpTopN): Unit = {
