@@ -177,9 +177,8 @@ object TripleOpsQueryNew {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("TripleOps").master("local[*]").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
-    //val tripleFile="/home/david/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt"
-    val tripleFile="/Users/jignesh/Desktop/Fiverr/David/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt"
-    val resultDir="/Users/jignesh/Desktop/Fiverr/David/SANSA-Examples/sansa-examples-spark/src/main/resources/output"
+    val tripleFile="/home/david/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt"
+    val resultDir="/home/david/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/output"
     val lang = Lang.NTRIPLES
     val rdfTriple = spark.rdf(lang)(tripleFile);
     val hdtDF = TripleOps.getHDT(rdfTriple)
