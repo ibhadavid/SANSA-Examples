@@ -29,3 +29,13 @@ sansa-examples-spark/src/main/scala/net/sansa_stack/.DS_Store
 sansa-examples-spark/src/main/scala/net/.DS_Store
 sansa-examples-spark/src/main/scala/.DS_Store
 sansa-examples-spark/src/main/resources/small/lubm/sample.nt
+sansa-examples-spark/src/main/resources/output/result_0.11573293302429821.csv
+sansa-examples-spark/src/main/resources/output/result_0.22343404330100824.csv
+sansa-examples-spark/src/main/resources/output/result_0.25781063687186.csv
+sansa-examples-spark/src/main/resources/output/result_0.33071430768051246.csv
+sansa-examples-spark/src/main/resources/output/result_0.43766559350454093.csv
+sansa-examples-spark/src/main/resources/output/result_0.7554156285718322.csv
+sansa-examples-spark/src/main/resources/output/result_0.8085135575374428.csv
+sansa-examples-spark/src/main/resources/query/.DS_Store
+sansa-examples-spark/src/main/resources/small/DBPedia/dbpedia_2016-10.nt
+sansa-examples-spark/src/main/resources/small/lubm/sample.nt

@@ -101,6 +101,7 @@ object TripleOps {
 
     // Creating Fact table from Subject,Predicate and Object index. Fact table contains unique ID of Subject/Object/Predicate
     val hdt = spark.sql(sqlQuery)
+    hdt.cache()
     hdt.createOrReplaceTempView(HDT_TABLE)
 
     hdt

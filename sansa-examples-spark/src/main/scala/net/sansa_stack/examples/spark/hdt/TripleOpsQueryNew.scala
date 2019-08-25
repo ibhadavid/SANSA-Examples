@@ -1,5 +1,8 @@
 package net.sansa_stack.examples.spark.hdt
 
+import java.io.{File, PrintWriter}
+import java.util.Calendar
+
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.sparql.algebra.Algebra
 import org.apache.jena.sparql.algebra.OpWalker
@@ -7,7 +10,6 @@ import org.apache.jena.riot.Lang
 import org.apache.spark.sql.SparkSession
 import net.sansa_stack.rdf.spark.io._
 import org.apache.spark.rdd.RDD
-import org.apache.jena.sparql.expr.Expr
 import net.sansa_stack.query.spark.query._
 
 class TripleOpsQueryNew() {
@@ -53,19 +55,43 @@ class TripleOpsQueryNew() {
     var tempStr = ""
     for(i <- 0 to queryScanner.whereCondition.size()-1)
     {
-      if(!queryScanner.subjects.get(i).toString().toLowerCase().contains("?s")){
-        tempStr += s" ${TripleOps.SUBJECT_TABLE}.name='${queryScanner.subjects.get(i)}' and"
-      }
-      if(!queryScanner.objects.get(i).toString().toLowerCase().contains("?o")){
-        tempStr += s" ${TripleOps.OBJECT_TABLE}.name='${queryScanner.objects.get(i)}' and"
-      }
-      if(!queryScanner.predicates.get(i).toString().toLowerCase().contains("?p")){
-        tempStr += s" ${TripleOps.PREDICATE_TABLE}.name='${queryScanner.predicates.get(i)}' and"
+      if(!queryScanner.optional.get(i)){
+        if(!queryScanner.subjects.get(i).toString().toLowerCase().contains("?s")){
+          tempStr += s" ${TripleOps.SUBJECT_TABLE}.name='${queryScanner.subjects.get(i)}' and"
+        }
+        if(!queryScanner.objects.get(i).toString().toLowerCase().contains("?o")){
+          tempStr += s" ${TripleOps.OBJECT_TABLE}.name='${queryScanner.objects.get(i)}' and"
+        }
+        if(!queryScanner.predicates.get(i).toString().toLowerCase().contains("?p")){
+          tempStr += s" ${TripleOps.PREDICATE_TABLE}.name='${queryScanner.predicates.get(i)}' and"
+        }
       }
     }
     tempStr=tempStr.reverse.replaceFirst("dna","").reverse
+
+    if(queryScanner.optional.contains(true)){
+      for(i <- 0 to queryScanner.whereCondition.size()-1)
+      {
+        if(queryScanner.optional.get(i)){
+          tempStr+=" or ( "
+          if(!queryScanner.subjects.get(i).toString().toLowerCase().contains("?s")){
+            tempStr += s" ${TripleOps.SUBJECT_TABLE}.name='${queryScanner.subjects.get(i)}' and"
+          }
+          if(!queryScanner.objects.get(i).toString().toLowerCase().contains("?o")){
+            tempStr += s" ${TripleOps.OBJECT_TABLE}.name='${queryScanner.objects.get(i)}' and"
+          }
+          if(!queryScanner.predicates.get(i).toString().toLowerCase().contains("?p")){
+            tempStr += s" ${TripleOps.PREDICATE_TABLE}.name='${queryScanner.predicates.get(i)}' and"
+          }
+          tempStr=tempStr.reverse.replaceFirst("dna","").reverse
+          tempStr+=" )"
+        }
+      }
+    }
+
+
     if(tempStr.length>5) {s" where (${tempStr})" }
-    else {""}
+    else {" where 1=1 "}
 
 }
 
@@ -94,15 +120,22 @@ class TripleOpsQueryNew() {
 
   def getFilterCondition(): String ={
     var strCondition=""
+    var logicalOp=""
 
     for( i <- 0 to queryScanner.filters.size()-1)
     {
-      strCondition+=FilterCondition.getHDTFilter(queryScanner.filters.get(i))
-      println(" Condition Processed: "+strCondition)
+      val cond=FilterCondition.getHDTFilter(queryScanner.filters.get(i)) ;
+      if(cond.length>2)
+      {
+        strCondition+=cond + " and "
+      }
+
+      //println(" Condition Processed: "+strCondition)
     }
 
     strCondition=strCondition.reverse.replaceFirst("dna","").reverse
-    if(strCondition.length>5) s"where ${strCondition}" else ""
+    println(strCondition)
+    if(strCondition.length>5) s" ${strCondition}" else " 1=1"
   }
 
   def getQuery(queryStr:String) ={
@@ -115,60 +148,73 @@ class TripleOpsQueryNew() {
     val result=s"select ${getProjectionFields()}from ${TripleOps.HDT_TABLE} inner join ${TripleOps.SUBJECT_TABLE} on ${TripleOps.HDT_TABLE}.s=${TripleOps.SUBJECT_TABLE}.index" +
       s" inner join ${TripleOps.OBJECT_TABLE} on ${TripleOps.HDT_TABLE}.o=${TripleOps.OBJECT_TABLE}.index" +
       s" inner join ${TripleOps.PREDICATE_TABLE} on ${TripleOps.HDT_TABLE}.p=${TripleOps.PREDICATE_TABLE}.index" +
-      s" ${getWhereCondition()} ${getFilterCondition()} ${getDistinct()}"
+      s" ${getWhereCondition()} and ${getFilterCondition()} ${getDistinct()}"
+    println(result)
     result
   }
 
 }
 object TripleOpsQueryNew {
 
-  def execute(spark:SparkSession,rdfTriple: RDD[org.apache.jena.graph.Triple] , query:String): Unit ={
+  def execute(spark:SparkSession,rdfTriple: RDD[org.apache.jena.graph.Triple] , query:String, resultDir:String): Unit ={
 
     var queryops=new TripleOpsQueryNew()
 
-    var df=spark.sql(queryops.getQuery(query))
-    val count=rdfTriple.sparql(query).count()
-    println(s"SparQL Query : ${query}")
-    println("Spark SQL: "+queryops.getQuery(query))
-    println("SparQL Query Count: "+ count)
-    println(s"Spark SQL Count: ${df.count()}")
+    val pw = new PrintWriter(new File(s"${resultDir}/result_${Math.random()}.csv" ))
+    pw.write(s" ${query} |")
+    pw.append(s" ${queryops.getQuery(query)} |")
+    var start=System.currentTimeMillis()
+    var dfCount=spark.sql(queryops.getQuery(query)).count()
+    val diff=(System.currentTimeMillis()-start)/1000.0;
+    pw.append(s"${dfCount} | ${diff} |")
 
+    start=System.currentTimeMillis()
+    val count=rdfTriple.sparql(query).count()
+    pw.append(s"${count} |  ${(System.currentTimeMillis()-start)/1000.0} ")
+    pw.append("\n")
+    pw.close()
   }
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("TripleOps").master("local[*]").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
-    val tripleFile="/home/david/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt"
+    //val tripleFile="/home/david/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt"
+    val tripleFile="/Users/jignesh/Desktop/Fiverr/David/SANSA-Examples/sansa-examples-spark/src/main/resources/small/bsbm/sample.nt"
+    val resultDir="/Users/jignesh/Desktop/Fiverr/David/SANSA-Examples/sansa-examples-spark/src/main/resources/output"
     val lang = Lang.NTRIPLES
     val rdfTriple = spark.rdf(lang)(tripleFile);
     val hdtDF = TripleOps.getHDT(rdfTriple)
 
-    var query="SELECT ?S ?O ?P WHERE { ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual4> ?P .  }"
+    var query=""
+    query="SELECT ?S ?O ?P WHERE { ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual4> ?P .  }"
+
 
     query="SELECT ?S ?O ?P  WHERE { ?S ?P ?O }"
-    execute(spark,rdfTriple,query)
+    execute(spark,rdfTriple,query,resultDir)
 
      query="SELECT (COUNT(*) AS ?A)  WHERE { ?S ?P ?O }"
-      execute(spark,rdfTriple,query)
+     execute(spark,rdfTriple,query,resultDir)
 
-/*   query="""
-     SELECT ?S ?O ?P WHERE { FILTER( STRSTARTS(?p, "http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/ProductType1" )) . }
-   """.stripMargin
- execute(spark,rdfTriple,query)
-  */
+    query="SELECT DISTINCT ?S ?O ?P WHERE { ?S ?P ?O }"
+    execute(spark,rdfTriple,query,resultDir)
 
-query="SELECT DISTINCT ?S ?O ?P WHERE { ?S ?P ?O }"
-execute(spark,rdfTriple,query)
-
-query="PREFIX foo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/> PREFIX hoo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/> SELECT ?S ?O ?P WHERE { foo:ProductType2 ?P ?O .  } limit 10"
-execute(spark,rdfTriple,query)
+    query="PREFIX foo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/> PREFIX hoo: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/> SELECT ?S ?O ?P WHERE { foo:ProductType2 ?P ?O .  } limit 10"
+    execute(spark,rdfTriple,query,resultDir)
 
 
-//query="prefix test: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/> SELECT ?S ?O ?P WHERE { test:Product92 ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
-//execute(spark,rdfTriple,query)
+    query="prefix test: <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/> SELECT ?S ?O ?P WHERE { test:Product92 ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
+    execute(spark,rdfTriple,query,resultDir)
 
-query="SELECT ?S ?O ?P WHERE { <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/Product92> ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
-execute(spark,rdfTriple,query)
+    query="SELECT ?S ?O ?P WHERE { <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/Product92> ?P ?O . ?S <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?O . }"
+    execute(spark,rdfTriple,query,resultDir)
 
+
+    query="""
+         SELECT ?s ?p WHERE {
+         ?s ?p <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/instances/dataFromProducer2/Product92> .
+         OPTIONAL { ?s <http://www4.wiwiss.fu-berlin.de/bizer/bsbm/v01/vocabulary/productPropertyTextual1> ?o }
+        }
+      """.stripMargin
+    execute(spark,rdfTriple,query,resultDir)
 }
 
 }
