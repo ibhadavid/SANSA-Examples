@@ -188,11 +188,9 @@ object TripleOpsQueryNew {
       println("Usage:")
       println("TripleOpsQueryNew <tripleFilePath> <resultDir> <queryDir>")
     }
-    //val tripleFile="/Users/jignesh/Desktop/Fiverr/David/SANSA-Examples/sansa-examples-spark/src/main/resources/small/lubm/sample.nt"
     val tripleFile=args(0)
     println(s"Triple File: ${tripleFile}")
-    //val resultDir="/Users/jignesh/Desktop/Fiverr/David/SANSA-Examples/sansa-examples-spark/src/main/resources/output/lubm"
-
+    
     val resultDir=args(1)
     println(s"Result Dir: ${resultDir}")
 
