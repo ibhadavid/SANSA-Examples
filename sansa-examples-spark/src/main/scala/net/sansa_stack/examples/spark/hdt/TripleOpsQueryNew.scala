@@ -172,8 +172,8 @@ object TripleOpsQueryNew {
     pw.append(s"${dfCount} | ${diff} |")
 
     start=System.currentTimeMillis()
-   // val count=rdfTriple.sparql(query).count()
-    //pw.append(s"${count} |  ${(System.currentTimeMillis()-start)/1000.0} ")
+   val count=rdfTriple.sparql(query).count()
+   pw.append(s"${count} |  ${(System.currentTimeMillis()-start)/1000.0} ")
     pw.append("\n")
     pw.close()
   }
@@ -190,7 +190,7 @@ object TripleOpsQueryNew {
     }
     val tripleFile=args(0)
     println(s"Triple File: ${tripleFile}")
-    
+
     val resultDir=args(1)
     println(s"Result Dir: ${resultDir}")
 

@@ -1,4 +1,0 @@
-SELECT ?author ?publication
-WHERE {
-	?publication :publicationAuthor ?author .
-}

@@ -1,4 +1,0 @@
-SELECT ?P
-WHERE {
-    ?S ?O ?P .
-}
