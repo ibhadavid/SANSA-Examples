@@ -39,3 +39,7 @@ sansa-examples-spark/src/main/resources/output/result_0.8085135575374428.csv
 sansa-examples-spark/src/main/resources/query/.DS_Store
 sansa-examples-spark/src/main/resources/small/DBPedia/dbpedia_2016-10.nt
 sansa-examples-spark/src/main/resources/small/lubm/sample.nt
+
+# Files generated for spark runs
+sansa-examples-spark/data/
+
